@@ -19,12 +19,12 @@ parseDir : String -> Dir
 parseDir "forward" = Fwd
 parseDir "up"      = Up
 parseDir "down"    = Down
-parseDir _         = assert_total $ idris_crash "cannot parse direction"
+parseDir _         = fatal "cannot parse direction"
 
 parseLine : String -> Move
 parseLine str = case words str of
   [dir,n] => MkMove (parseDir dir) (readInt n)
-  _       => assert_total $ idris_crash "cannot parse line"
+  _       => fatal "cannot parse line"
 
 --------------------------------------------------------------------------------
 -- part 1
