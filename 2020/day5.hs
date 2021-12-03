@@ -1,6 +1,8 @@
 
 import Data.List
 
+--------------------------------------------------------------------------------
+
 readBinary :: [Bool] -> Int
 readBinary []     = 0
 readBinary (x:xs) = (if x then 1 else 0) + 2 * (readBinary xs) 
@@ -18,23 +20,32 @@ decodeSeatId = readBinary . map charToBool . reverse
 seatPos :: SeatId -> (Int,Int)
 seatPos seat = divMod seat 8
 
-test =
+--------------------------------------------------------------------------------
+{-
+
+testData =
   [ "BFFFBBFRRR" 
   , "FFFBBBFRRR"
   , "BBFFBBFRLL"
   ]
 
+
+test = do
+  print [ (s,seatPos s) | s <- map decodeSeatId testData ]
+
+-}
+--------------------------------------------------------------------------------
+
+main :: IO ()
 main = do
-  print [ (s,seatPos s) | s <- map decodeSeatId test ]
   ws <- words <$> readFile "input5"
   let seats = map decodeSeatId ws
   putStrLn $ "maximum = " ++ show (maximum seats)
   let sorted = sort seats
-  print sorted
   let holes = [ x+1 
               | x <- sorted , let y = x+1 , let z = y+1
               , not (elem y sorted)
               , elem z sorted
               ]
-  print holes
+  putStrLn $ "holes   = " ++ show holes
 

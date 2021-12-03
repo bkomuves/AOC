@@ -13,9 +13,10 @@ solve1 = length . nub . sort . concat
 solve2 :: [String] -> Int
 solve2 = Set.size . foldl1' Set.intersection . map Set.fromList
 
+main :: IO ()
 main = do
-  -- input <- readFile "test6"
   input <- readFile "input6"
-  let xs = map solve2 $ parse input
-  print xs
-  print $ sum xs
+  let xs1 = map solve1 $ parse input
+  let xs2 = map solve2 $ parse input
+  print $ sum xs1
+  print $ sum xs2

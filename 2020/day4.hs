@@ -98,15 +98,21 @@ isvalid2 p = isvalid1 p && all f p where
     "cid"  -> True
     _ -> error "unknown key"
 
+--------------------------------------------------------------------------------
+
 main1 = do
   text <- readFile "input4"
   let ps = parse text
-  mapM_ print $ filter isvalid1 ps
   print $ length $ filter isvalid1 ps
 
 main2 = do
   text <- readFile "input4"
   let ps = parse text
-  -- mapM_ print $ filter isvalid1 ps
-  print $ map isvalid2 ps
   print $ length $ filter isvalid2 ps
+
+--------------------------------------------------------------------------------
+
+main :: IO ()
+main = do
+  main1
+  main2

@@ -1,11 +1,12 @@
 
+import Data.Set (Set)
 import qualified Data.Set as Set
 
 --------------------------------------------------------------------------------
 -- part1 
 
-solve :: [Integer] -> [Integer]
-solve = map multiply . findit 
+solve1 :: [Integer] -> Set Integer
+solve1 = Set.fromList . map multiply . findit 
 
 multiply :: (Integer,Integer) -> Integer
 multiply (a,b) = a * b
@@ -17,8 +18,8 @@ findit list = [ (a,b) | a<-list , let b = 2020-a , Set.member b set ] where
 --------------------------------------------------------------------------------
 -- part2
 
-solve3 :: [Integer] -> [Integer]
-solve3 = map multiply3 . findit3
+solve2 :: [Integer] -> Set Integer
+solve2 = Set.fromList . map multiply3 . findit3
 
 multiply3 :: (Integer,Integer,Integer) -> Integer
 multiply3 (a,b,c) = a * b * c
@@ -29,9 +30,7 @@ findit3 list = [ (a,b,c) | a<-list , b <- list , let c = 2020-a-b , Set.member c
 
 --------------------------------------------------------------------------------
 
-testlist = [ 1721 , 979 , 366 , 299 , 675 , 1456 ]
-
 main = do
   text <- readFile "input1"
-  print $ solve   $ map read $ words text
-  print $ findit3 $ map read $ words text
+  print $ solve1 $ map read $ words text
+  print $ solve2 $ map read $ words text

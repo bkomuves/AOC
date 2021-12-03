@@ -74,13 +74,11 @@ dfsForwardCount graph start = go start where
     next = Map.findWithDefault [] node (_children graph)
 
 main = do
-  -- input <- readFile "test7"
-  -- input <- readFile "test7b"
   input <- readFile "input7"
   let desc = map parse1 $ lines input
-  mapM_ print desc
+  -- mapM_ print desc
   let graph = graphFromList [ (p,ce) | (p,ces) <- desc , ce <- ces ]
   let set = Set.delete shiny $ dfsBackwards graph shiny 
-  print set
+  -- print set
   putStrLn $ "part1 = " ++ show (Set.size set)
   putStrLn $ "part2 = " ++ show (dfsForwardCount graph shiny - 1)
