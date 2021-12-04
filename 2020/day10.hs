@@ -2,6 +2,8 @@
 import Data.List
 import Data.Array
 
+--------------------------------------------------------------------------------
+
 diffs (a:b:rest) = (b-a) : diffs (b:rest)
 diffs [a] = []
 diffs []  = []
@@ -9,14 +11,16 @@ diffs []  = []
 histo :: [Int] -> [(Int,Int)]
 histo = map (\xs -> (head xs, length xs)) . group . sort 
 
-solve :: [Int] -> [(Int,Int)]
-solve = histo . diffs . initialize
+solve1 :: [Int] -> [(Int,Int)]
+solve1 = histo . diffs . initialize
 
 addmax :: [Int] -> [Int]
 addmax xs = (maximum xs + 3) : xs
 
 initialize :: [Int] -> [Int]
 initialize = (0:) . sort . addmax  
+
+--------------------------------------------------------------------------------
 
 test_a = [16,10,15,5,1,11,7,19,6,12,4] :: [Int]
 
@@ -29,6 +33,7 @@ possibleSlow :: [Int] -> Integer
 possibleSlow [n] = 1
 possibleSlow (a:xs) = foldl' (+) 0 [ possibleSlow ls | ls <- stuff_and_rest (a+3) xs ] 
 
+possibleFast :: [Int] -> Integer
 possibleFast xs = possibleArr xs ! 0
 
 possibleArr :: [Int] -> Array Int Integer
@@ -42,9 +47,12 @@ possibleArr input = sol where
     | i == len-1  = 1
     | otherwise   = foldl' (+) 0 [ sol ! k | k<-[i+1..len-1] , inp!k <= (inp!i + 3) ] 
 
+--------------------------------------------------------------------------------
+
+main :: IO ()
 main = do
-  -- xs <- (map read . words) <$> readFile "test10"  :: IO [Int]
-  xs <- (map read . words) <$> readFile "input10"  :: IO [Int]
-  print $ solve xs
-  print $ possibleFast $ initialize xs
-  -- print $ possibleSlow $ initialize xs
+  xs <- (map read . words) <$> readFile "input10" :: IO [Int]
+  let hist = solve1 xs
+  print hist
+  putStrLn $ "part 1: " ++ show ((*) <$> lookup 1 hist <*> lookup 3 hist)
+  putStrLn $ "part 2: " ++ show (possibleFast $ initialize xs)
