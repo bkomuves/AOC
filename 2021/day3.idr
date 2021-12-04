@@ -2,21 +2,8 @@
 import Data.List
 import Data.Vect
 import Data.String
-import System.File
 
 import Common
-
---------------------------------------------------------------------------------
-
-fromListN : (n : Nat) -> List a -> Maybe (Vect n a)
-fromListN 0     xs      = case xs of { Nil => Just Nil ; _ => Nothing }
-fromListN (S n) (x::xs) = (x::) <$> fromListN n xs
-fromListN _     _       = Nothing
-
-unsafeFromListN : (n : Nat) -> List a -> Vect n a
-unsafeFromListN n xs = case fromListN n xs of
-  Just vec => vec
-  Nothing  => fatal "unsafeFromListN: lengths to not match"
 
 --------------------------------------------------------------------------------
 
@@ -131,7 +118,7 @@ solve2 (n ** input) = do
 main : IO ()
 main = do
   lines <- readLines "input3"
-  let input = parseFile $ filter (not . null) $ map trim $ lines
+  let input = parseFile $ filter (not . null) lines
   printLn =<< solve1 input
   printLn =<< solve2 input
 

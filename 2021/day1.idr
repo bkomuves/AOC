@@ -3,23 +3,7 @@ import Data.List
 import Data.String
 import System.File
 
-import Common
-
-{-
-readInt : String -> Int
-readInt = cast . trim
-
-pairs : List a -> List (a,a)
-pairs Nil            = Nil
-pairs (_::Nil)       = Nil
-pairs (x::xs@(y::_)) = (x,y) :: pairs xs
-
-triples : List a -> List (a,a,a)
-triples Nil               = Nil
-triples (_::Nil)          = Nil
-triples (_::_::Nil)       = Nil
-triples (x::xs@(y::z::_)) = (x,y,z) :: triples xs
--}
+import Common 
 
 tripleSum : (Int,Int,Int) -> Int
 tripleSum (x,y,z) = x + y + z

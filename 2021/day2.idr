@@ -78,7 +78,7 @@ solve2 = mulV2 . foldl (flip updateV2) zeroV2
 main : IO ()
 main = do
   lines <- readLines "input2"
-  let input = map parseLine $ filter (not . null) $ lines
+  let input = map parseLine $ filter (not . null) lines
   printLn $ solve1 input
   printLn $ solve2 input
 
