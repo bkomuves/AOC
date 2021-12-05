@@ -1,12 +1,20 @@
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE Strict #-}
 
 import Data.List
+
+--------------------------------------------------------------------------------
+-- parsing
 
 type Instr = (Char,Int)
 
 parse :: String -> Instr
 parse (c:rest) = (c,read rest)
+
+type Path = [Instr]
+
+--------------------------------------------------------------------------------
+-- directions, positions
 
 data Dir = E | W | N | S deriving Show
 
@@ -52,10 +60,13 @@ type Pos = (Int,Int)
 plus :: Pos -> Pos -> Pos
 plus (a,b) (x,y) = (a+x , b+y)
 
+--------------------------------------------------------------------------------
+-- part 1
+
 type State = (Dir,Pos)
 
 step :: State -> Instr -> State
-step (!dir,!pos) (!c,!k) = case c of
+step (dir,pos) (c,k) = case c of
   'E' -> (dir, plus pos (vec E k))
   'W' -> (dir, plus pos (vec W k))
   'N' -> (dir, plus pos (vec N k))
@@ -64,10 +75,21 @@ step (!dir,!pos) (!c,!k) = case c of
   'R' -> case divMod k 90 of (n,0) -> (rotRight n dir , pos)
   'F' -> (dir, plus pos (vec dir k))
 
+solve1 :: Path -> IO ()
+solve1 path = do
+  putStrLn "\npart 1"
+  let ini  = (E,(0,0))
+  let end@(dir,pos) = foldl' step ini path
+  putStrLn $ "final state = " ++ show end
+  putStrLn $ "solution = " ++ show (abs (fst pos) + abs (snd pos))
+
+--------------------------------------------------------------------------------
+-- part 2
+
 type State2 = (Pos,Pos)
 
 step_v2 :: State2 -> Instr -> State2
-step_v2 (!wp,!pos) (!c,!k) = case c of
+step_v2 (wp,pos) (c,k) = case c of
   'E' -> (plus wp (vec E k) , pos)
   'W' -> (plus wp (vec W k) , pos)
   'N' -> (plus wp (vec N k) , pos)
@@ -76,14 +98,19 @@ step_v2 (!wp,!pos) (!c,!k) = case c of
   'R' -> case divMod k 90 of (n,0) -> (vrotRight n wp , pos)
   'F' -> (wp, plus pos (scale k wp))
 
+solve2 :: Path -> IO ()
+solve2 path = do
+  putStrLn "\npart 2"
+  let ini2 = ((10,1),(0,0))
+  let end@(dir,pos) = foldl' step_v2 ini2 path
+  putStrLn $ "final state = " ++ show end
+  putStrLn $ "solution = " ++ show (abs (fst pos) + abs (snd pos))
+
+--------------------------------------------------------------------------------
+
 test = "F10 N3 F7 R90 F11"
 
 main = do
   path <- (map parse . words) <$> readFile "input12"
-  -- let path = map parse $ words $ test
-  let ini  = (E,(0,0))
-  let ini2 = ((10,1),(0,0))
-  -- let end@(dir,pos) = foldl' step ini path
-  let end@(dir,pos) = foldl' step_v2 ini2 path
-  print end
-  print (abs (fst pos) + abs (snd pos))
+  solve1 path
+  solve2 path
