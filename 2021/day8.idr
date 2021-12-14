@@ -6,6 +6,7 @@ import Data.Vect
 import Data.String
 
 import Common
+import Digit
 
 --------------------------------------------------------------------------------
 
@@ -59,7 +60,7 @@ parseDisplay : String -> Display
 parseDisplay = foldl f emptyDisplay . unpack where
   f : Display -> Char -> Display
   f old ' ' = old
-  f old c   = case let n = ord c in case natToFin (cast (n-97)) 7 of
+  f old c   = let n = ord c in case natToFin (cast (n-97)) 7 of
                 Just j => replaceAt j True old
                 _      => fatal "parseDisplay: expecting a character between `a` and `g`"
 
@@ -135,14 +136,8 @@ namespace List
   remove1 []      = []
   remove1 (x::xs) = (x,xs) :: [ (y,x::ys) | (y,ys) <- remove1 xs ]
 
-mapPartial : Vect k Segment -> 
-
 allSegments : List Segment
 allSegments = toList $ range {len=7}
-
-isCompatible : Vect k Segment -> Bool
-isCompatible Nil       = True
-isCompatible partial_
 
 backtrack : what -> (forall k. what -> Vect k Segment -> Bool) -> List Mapping
 backtrack param cond = worker Nil allSegments where

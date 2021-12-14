@@ -3,6 +3,7 @@ import Data.Fin
 import Data.Vect
 
 import Common
+import Digit
 
 --------------------------------------------------------------------------------
 -- matrices and indices

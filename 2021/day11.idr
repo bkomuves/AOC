@@ -7,6 +7,7 @@ import Data.SortedSet
 
 import Common
 import Matrix
+import Digit
 
 --------------------------------------------------------------------------------
 

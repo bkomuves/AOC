@@ -7,9 +7,9 @@ import Common
 
 --------------------------------------------------------------------------------
 
-data Digit 
-  = Zero 
-  | One 
+data Digit
+  = Zero
+  | One
 
 implementation Eq Digit where
   Zero == Zero = True
