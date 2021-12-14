@@ -169,6 +169,7 @@ part2 graph = do
   putStrLn $ "number of paths = " ++ show (length ps)
 
 --------------------------------------------------------------------------------
+
 main : IO ()
 main = do
   ls <- filterNonEmpty <$> readLines "input12"

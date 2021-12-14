@@ -4,30 +4,11 @@ import Data.List1
 import Data.String
 import Data.SortedMap
 
-import Common 
+import Common
+import Pos
 
 --------------------------------------------------------------------------------
 -- parsing
-
-data Pos 
-  = MkPos Int Int
-
-Eq Pos where
-  (==) (MkPos x1 y1) (MkPos x2 y2) = (x1 == x2 && y1 == y2)
-
-Ord Pos where
-  compare (MkPos x1 y1) (MkPos x2 y2) = case compare x1 x2 of
-    LT => LT
-    GT => GT
-    EQ => compare y1 y2
-
-Show Pos where 
-  show (MkPos x y) = "(" ++ show x ++ "," ++ show y ++ ")"
-
-parsePos : String -> Pos
-parsePos str = case split (==',') (trim str) of
-  (xxx:::[yyy]) => MkPos (cast xxx) (cast yyy)
-  _             => fatal $ "cannot parse position string: " ++ show str
 
 Line : Type
 Line = (Pos,Pos)
@@ -48,14 +29,14 @@ Dist = Nat
 
 namespace Part1
 
-  data HV 
+  data HV
     = Horz Pos Dist
     | Vert Pos Dist
-  
+
   Show HV where
     show (Horz pos dist) = "horizontal " ++ show pos ++ " => " ++ show dist
     show (Vert pos dist) = "vertical "   ++ show pos ++ " => " ++ show dist
-  
+
   toHV : (Pos,Pos) -> Maybe HV
   toHV (MkPos x1 y1, MkPos x2 y2) =
     if y1 == y2
@@ -63,14 +44,14 @@ namespace Part1
       else if x1 == x2
         then Just $ Vert (MkPos x1 (min y1 y2)) (cast $ abs (y2-y1))
         else Nothing
-  
+
   hvToPixels : HV -> List Pos
   hvToPixels (Horz (MkPos x y) d) = [ MkPos (x + cast i) y | i<-[0..d] ]
   hvToPixels (Vert (MkPos x y) d) = [ MkPos x (y + cast i) | i<-[0..d] ]
-  
+
   hvToPixelSet : HV -> SortedMap Pos Nat
   hvToPixelSet = fromList . map (\p => (p,1)) . hvToPixels
-  
+
   export
   solve1 : Input -> IO ()
   solve1 input = do
