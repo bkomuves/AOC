@@ -3,7 +3,7 @@ import Data.Nat
 import Data.List
 import Data.Vect
 
-import Common 
+import Common
 
 --------------------------------------------------------------------------------
 
@@ -45,12 +45,8 @@ example = toPopulation [3,4,3,1,2]
 step : Population -> Population
 step (k::ks) = updateAt 6 (+k) ks ++ [k]
 
-iter : Nat -> (a -> a) -> a -> a
-iter Z     f x = x
-iter (S n) f x = f (iter n f x)
-
 solve : Population -> Nat -> Nat
-solve pop ndays = sum $ iter ndays step pop
+solve pop ndays = sum $ natRec ndays step pop
 
 --------------------------------------------------------------------------------
 

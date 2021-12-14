@@ -13,6 +13,13 @@ fatal : String -> a
 fatal msg = assert_total $ idris_crash msg
 
 --------------------------------------------------------------------------------
+-- iteration
+
+natRec : Nat -> (a -> a) -> a -> a
+natRec Z     f x = x
+natRec (S n) f x = f (natRec n f x)
+
+--------------------------------------------------------------------------------
 -- strings
 
 readInt : String -> Int
@@ -41,7 +48,13 @@ unsafeFromListN n xs = case fromListN n xs of
   Nothing  => fatal "unsafeFromListN: lengths to not match"
 
 --------------------------------------------------------------------------------
--- digits
+-- vectors
+
+wihtIndices : {n : Nat} -> Vect n a -> Vect n (Fin n, a)
+wihtIndices vec = zip range vec
+
+--------------------------------------------------------------------------------
+-- digits (these appear sometimes in AOC problems)
 
 Digit : Type
 Digit = Fin 10
@@ -65,6 +78,12 @@ showDigit : Digit -> String
 showDigit d = singleton $ digitToChar d
 
 [digit] Show Digit where show = showDigit
+
+allDigitsV : Vect 10 Digit
+allDigitsV = range
+
+allDigitsL : List Digit
+allDigitsL = toList allDigitsV
 
 --------------------------------------------------------------------------------
 -- pars, triples
