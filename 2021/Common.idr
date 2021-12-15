@@ -1,6 +1,8 @@
 
 -- commonly used helper functions
 
+import Data.Fin
+import Data.So
 import Data.List
 import Data.Vect
 import Data.String
@@ -18,6 +20,25 @@ fatal msg = assert_total $ idris_crash msg
 natRec : Nat -> (a -> a) -> a -> a
 natRec Z     f x = x
 natRec (S n) f x = f (natRec n f x)
+
+--------------------------------------------------------------------------------
+-- Fin
+
+incFin : {n : Nat} -> Fin n -> Maybe (Fin n)
+incFin {n=1      } FZ     = Nothing
+incFin {n=S (S k)} FZ     = Just (FS FZ)
+incFin {n=S k    } (FS j) = FS <$> (incFin j)
+
+finDivMod : {k, n : Nat} -> Fin (k*n) -> (Fin k, Fin n)
+finDivMod a0 =
+  let a = finToNat a0
+      q = div a n
+      r = mod a n
+ in case choose (q < k) of
+      Right _   => fatal "finDivMod: should not happen /div"
+      Left prf1 => case choose (r < n) of
+        Right _   => fatal "finDivMod: should not happen /mod"
+        Left prf2 => (natToFinLt q, natToFinLt r)
 
 --------------------------------------------------------------------------------
 -- strings

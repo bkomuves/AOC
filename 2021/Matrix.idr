@@ -1,4 +1,6 @@
 
+-- this is very painful because Idris does not have eta-equality for pairs...
+
 import Data.Fin
 import Data.Vect
 
@@ -6,19 +8,34 @@ import Common
 import Digit
 
 --------------------------------------------------------------------------------
--- matrices and indices
+-- dimensions
 
 public export
 Dimensions : Type
 Dimensions = Pair Nat Nat
 
 public export
-Matrix : Dimensions -> Type -> Type
-Matrix (n,m) t = Vect n (Vect m t)
+data PosDim : Dimensions -> Type where
+  PosDimProof : {n1, m1 : Nat} -> (n = S n1) -> (m = S m1) -> PosDim (n,m)
 
 public export
-implementation [matrix] {0 dim : Dimensions} -> Functor (Matrix dim) where
-  map {dim=(_,_)} f mat = map (map f) mat
+isPosDim : (dim : Dimensions) -> Maybe (PosDim dim)
+isPosDim (S n1, S m1) = Just (PosDimProof Refl Refl)
+isPosDim (_   , _   ) = Nothing
+
+scalePos : (k1 : Nat) -> {n, n1 : Nat} -> (n = S n1) -> (l1 : Nat ** ((S k1) * n = S l1))
+scalePos k1 eq0 =
+  let eq = cong (\x => S k1 * x) eq0
+  in  (plus n1 (mult k1 (S n1)) ** eq)
+
+public export
+scalePosDim : (k : Nat) -> {k1, n, m : Nat} -> {auto 0 prf : k = S k1} -> PosDim (n,m) -> PosDim (k * n, k * m)
+scalePosDim k (PosDimProof eq1 eq2) = PosDimProof
+  (rewrite prf in snd $ scalePos k1 eq1)
+  (rewrite prf in snd $ scalePos k1 eq2)
+
+--------------------------------------------------------------------------------
+-- indices
 
 public export
 data Index : Dimensions -> Type where
@@ -38,6 +55,38 @@ implementation Ord (Index dim) where
 public export
 implementation Show (Index dim) where
   show (MkIndex i j) = show (i,j)
+
+topLeftCorner : {dim : Dimensions} -> {auto prf : PosDim dim} -> Index dim
+topLeftCorner {dim = (n,m)} {prf = PosDimProof eq1 eq2} = rewrite eq1 in (rewrite eq2 in MkIndex FZ FZ)
+
+bottomRightCorner : {dim : Dimensions} -> {auto prf : PosDim dim} -> Index dim
+bottomRightCorner {dim = (n,m)} {prf = PosDimProof eq1 eq2} = rewrite eq1 in (rewrite eq2 in MkIndex last last)
+
+--------------------------------------------------------------------------------
+-- matrices
+
+public export
+Matrix : Dimensions -> Type -> Type
+Matrix (n,m) t = Vect n (Vect m t)
+
+public export
+implementation [matrix] {0 dim : Dimensions} -> Functor (Matrix dim) where
+  map {dim=(_,_)} f mat = map (map f) mat
+
+-- Idris inference is shit
+public export
+mapMatrix : (a -> b) -> Matrix dim a -> Matrix dim b
+mapMatrix = map @{matrix}
+
+public export
+mkVect : {dim : Nat} -> (Fin dim -> a) -> Vect dim a
+mkVect = tabulate
+
+public export
+mkMatrix : {dim : Dimensions} -> (Index dim -> a) -> Matrix dim a
+mkMatrix {dim=(n,m)} f = mkVect (\i => mkVect (\j => f (MkIndex i j)))
+
+--------------------------------------------------------------------------------
 
 namespace Matrix
 

@@ -10,17 +10,10 @@ import Matrix
 import Digit
 
 --------------------------------------------------------------------------------
-
-inc : {n : Nat} -> Fin n -> Maybe (Fin n)
-inc {n=1      } FZ     = Nothing
-inc {n=S (S k)} FZ     = Just (FS FZ)
-inc {n=S k    } (FS j) = FS <$> (inc j)
-
---------------------------------------------------------------------------------
 -- part 1
 
 increase : Matrix dim Digit -> Matrix dim (Maybe Digit)
-increase = map @{matrix} inc
+increase = map @{matrix} incFin
 
 flashToZero_ : Matrix dim (Maybe Digit) -> Matrix dim Digit
 flashToZero_ = map @{matrix} f where
@@ -42,12 +35,12 @@ flash mat = go empty (findIndices isNothing mat) mat where
 
   incEnergy : Maybe Digit -> Maybe Digit
   incEnergy Nothing  = Nothing
-  incEnergy (Just k) = inc k
+  incEnergy (Just k) = incFin k
 
   updateAt1 : Index dim -> Matrix dim (Maybe Digit) -> (Maybe (Index dim), Matrix dim (Maybe Digit))
   updateAt1 idx mat = case index idx mat of
     Nothing => (Nothing, mat)
-    Just k  => case inc k of
+    Just k  => case incFin k of
       Nothing => (Just idx, replaceAt idx Nothing   mat)   -- flashed
       Just k1 => (Nothing , replaceAt idx (Just k1) mat)
 
