@@ -7,6 +7,7 @@ import Data.DPair
 import Data.String
 
 import Common
+import Parser
 
 --------------------------------------------------------------------------------
 
@@ -63,6 +64,7 @@ natFromBitVec : Vect n Bit -> Nat
 natFromBitVec = cast . fromBitVec
 
 --------------------------------------------------------------------------------
+-- nibbles
 
 Nibble : Type
 Nibble = Int
@@ -90,73 +92,6 @@ nibblesToList = concatMap nibbleToBits
 
 parseHexString : String -> Bits
 parseHexString = nibblesToList . map parseHexChar . unpack . trim
-
---------------------------------------------------------------------------------
--- parser combinator monad
-
-data Parser : Type -> Type where
-  MkP : (Bits -> Maybe (a, Bits)) -> Parser a
-
-runP : Parser a -> Bits -> Maybe (a, Bits)
-runP (MkP p) = p
-
-Functor Parser where
-  map f (MkP g) = MkP $ \bits => case g bits of
-    Nothing        => Nothing
-    Just (x, rest) => Just (f x, rest)
-
-Applicative Parser where
-  pure x  = MkP $ \bits => Just (x,bits)
-  (MkP p) <*> (MkP q) = MkP $ \bits0 => case p bits0 of
-    Nothing         => Nothing
-    Just (f, bits1) => case q bits1 of
-      Nothing         => Nothing
-      Just (x, bits2) => Just (f x, bits2)
-
-Monad Parser where
-  (MkP p) >>= h = MkP $ \bits0 => case p bits0 of
-    Nothing         => Nothing
-    Just (x, bits1) => case runP (h x) bits1 of
-      Nothing         => Nothing
-      Just (y, bits2) => Just (y, bits2)
-
-fail : Parser a
-fail = MkP $ \_ => Nothing
-
-Alternative Parser where
-  empty = fail
-  (MkP p) <|> q = MkP $ \bits => case p bits of
-    Just (x, rest) => Just (x, rest)
-    Nothing        => runP q bits
-
---------------------------------------------------------------------------------
--- basic parsers
-
-nextBit : Parser Bit
-nextBit = MkP $ \bits => case bits of
-  Nil     => Nothing
-  (b::bs) => Just (b,bs)
-
-repeat : (n : Nat) -> Parser a -> Parser (Vect n a)
-repeat Z     _ = pure Nil
-repeat (S k) p = (::) <$> p <*> repeat k p
-
-consume : (n : Nat) -> Parser (Vect n Bit)
-consume n = repeat n nextBit
-
-mutual
-
-  some : Parser a -> Parser (List1 a)
-  some p = do { x <- p ; xs <- many p ; pure (x:::xs) }
-
-  some_ : Parser a -> Parser (List a)
-  some_ p = forget <$> some p
-
-  many : Parser a -> Parser (List a)
-  many p = some_ p <|> pure Nil
-
-repeat_ : Nat -> Parser a -> Parser (List a)
-repeat_ n p = toList <$> repeat n p
 
 --------------------------------------------------------------------------------
 -- packets
@@ -203,6 +138,15 @@ mutual
     Lit : Nat -> RawPacket
     Op  : Tag -> List Packet -> RawPacket
 
+--------------------------------------------------------------------------------
+-- parser
+
+Parser : Type -> Type
+Parser = GenParser Bit
+
+nextBit : Parser Bit
+nextBit = anyToken
+
 mutual
 
   packet : Parser Packet
@@ -241,7 +185,7 @@ mutual
   subPacketsType0 = do
     n <- natFromBitVec <$> consume 15
     bits <- consume n
-    case runP (some_ packet) (toList bits) of
+    case runParser (some_ packet) (toList bits) of
       Nothing          => fail
       Just (list,rest) => case rest of
         Nil  => pure list
@@ -255,7 +199,7 @@ mutual
 --------------------------------------------------------------------------------
 
 parse : String -> Maybe Packet
-parse str = case (runP packet $ parseHexString str) of
+parse str = case (runParser packet $ parseHexString str) of
   Nothing         => Nothing
   Just (packet,_) => Just packet       -- snd <$> (...) does not typecheck?!
 

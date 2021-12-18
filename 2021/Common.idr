@@ -15,11 +15,18 @@ fatal : String -> a
 fatal msg = assert_total $ idris_crash msg
 
 --------------------------------------------------------------------------------
--- iteration
+-- nat
 
+-- iteration
 natRec : Nat -> (a -> a) -> a -> a
 natRec Z     f x = x
 natRec (S n) f x = f (natRec n f x)
+
+
+halve : Nat -> Nat
+halve Z         = Z
+halve (S Z)     = Z
+halve (S (S n)) = S (halve n)
 
 --------------------------------------------------------------------------------
 -- Fin
