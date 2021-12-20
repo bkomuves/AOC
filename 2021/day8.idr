@@ -19,9 +19,6 @@ Segment = Fin 7
 Display : Type
 Display = Vect 7 Bool
 
-PartialDisplay : Type
-PartialDisplay = Vect 7 (Maybe Bool)
-
 --------------------------------------------------------------------------------
 -- parsing
 
@@ -123,57 +120,48 @@ standardDisplay : Vect 10 Display
 standardDisplay = map parseDisplay standardDisplay_
 
 --------------------------------------------------------------------------------
+-- fuck it, let's just bruteforce; 7 factorial is only 5040
 
-namespace Vect
-  public export
-  remove1 : Vect (S n) a -> Vect (S n) (a, Vect n a)
-  remove1 (x::xs@Nil   ) = (x,Nil) :: []
-  remove1 (x::xs@(_::_)) = (x,xs ) :: map (\(y,ys) => (y,x::ys)) (remove1 xs)
+Perm : Nat -> Type
+Perm n = Vect n (Fin n)
 
-namespace List
-  public export
-  remove1 : List a -> List (a, List a)
-  remove1 []      = []
-  remove1 (x::xs) = (x,xs) :: [ (y,x::ys) | (y,ys) <- remove1 xs ]
+permutations : (n : Nat) -> List (Perm n)
+permutations 0      = [[]]
+permutations (S n1) = 
+  [ Vect.insertAt k last (map Fin.weaken ps) 
+  | ps <- permutations n1, k <- toList (Fin.range {len=S n1}) 
+  ]
 
-allSegments : List Segment
-allSegments = toList $ range {len=7}
+applyPerm1 : {n : Nat} -> Perm n -> Vect n a -> Vect n a
+applyPerm1 perm old = map (\i => index (index i perm) old) range
 
-backtrack : what -> (forall k. what -> Vect k Segment -> Bool) -> List Mapping
-backtrack param cond = worker Nil allSegments where
+applyPerm : Perm 7 -> Vect n Display -> Vect n Display
+applyPerm perm = map (applyPerm1 perm)
 
-  worker : {k : Nat} -> Vect k Segment -> List Segment -> List Mapping
-  worker {k=7} final    []   = if cond param final then [final] else []
-  worker {k=_} final    []   = fatal "this should not happen"
-  worker       partial_ rems = if cond param partial_
-    then       concat [ worker (x::partial_) xs | (x,xs) <- remove1 rems ]
-    else []
+findPerm : Vect 10 Display -> Maybe (Perm 7)
+findPerm garbled = find compatible (permutations 7) where
 
-{-
--- whether a given segment is possible output for a given wire
-Possible : Type
-Possible = (Vect 7 Bool)
+  ref : List Display
+  ref = sort $ toList standardDisplay
 
--- all possibilities for all wires
-Info : Type
-Info = Vect 7 Possible
+  compatible : Perm 7 -> Bool
+  compatible perm = ref == sort (toList (applyPerm perm garbled))
 
-noInfo : Info
-noInfo = replicate 7 (replicate 7 True)
+whichDigit : Display -> Maybe (Fin 10)
+whichDigit display = findIndex (==display) standardDisplay
 
--- given a display pattern, we return which digits is it compatible
--- according to our current knowledge
-checkDigit : Display -> Info -> Possible
-checkDigit display knowledge = 
+unsafeWhichDigit : Display -> Fin 10
+unsafeWhichDigit display = case whichDigit display of
+  Nothing => fatal "unsafeWhichDigit: not a digit"
+  Just d  => d
 
-solvePattern : Vect 10 Display -> Mapping
-solvePattern
+digitsToInt : Vect k (Fin 10) -> Int
+digitsToInt digits = cast {from=String} {to=Int} $ concat $ map showDigit digits
 
 solveEntry : Entry -> Int
-solveEntry = 
--}
-
-solveEntry : Entry -> Int
+solveEntry (MkEntry garbled fourdigit) = case findPerm garbled of
+  Nothing   => fatal "cannot solve entry"
+  Just perm => digitsToInt $ map unsafeWhichDigit (applyPerm perm fourdigit)
 
 solve2' : Input -> List Int
 solve2' = map solveEntry
@@ -187,6 +175,6 @@ main : IO ()
 main = do
   ls <- readLines "input8"
   let input = parseInput $ filterNonEmpty ls
-  mapM_ printEntry input
-  -- forM_ input $ \e => printLn $ map isUnique e.output
+  -- mapM_ printEntry input
   putStrLn $ "part 1 = " ++ show (solve1 input)
+  putStrLn $ "part 2 = " ++ show (solve2 input)
