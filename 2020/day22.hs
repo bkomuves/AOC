@@ -6,19 +6,18 @@ import qualified Data.Set as Set ; import Data.Set (Set)
 import qualified Data.Sequence as Seq ; import Data.Sequence ( Seq , (<|) , (|>) , ViewL(..) , ViewR(..) )
 import Data.Foldable as F
 
+-------------------------------------------------------------------------------
+
 data Player = Player1 | Player2 deriving Show
 
 data Result = Result Player [Int] deriving Show
 
-play (list1,list2) = go (Seq.fromList list1) (Seq.fromList list2) where
-  go !deck1 !deck2 = case (Seq.viewl deck1 , Seq.viewl deck2) of
-    (EmptyL  , _      ) -> Result Player2 (F.toList deck2)
-    (_       , EmptyL ) -> Result Player1 (F.toList deck1)
-    (x :< xs , y :< ys) -> if x > y 
-      then go (xs |> x |> y) ys 
-      else go xs (ys |> y |> x)
+winner :: Result -> Player
+winner (Result player _) = player
 
-load :: FilePath -> IO ([Int],[Int])
+type Decks = ([Int],[Int])
+
+load :: FilePath -> IO Decks
 load fn = do
   ls <- lines <$> readFile fn
   case splitWhen null ls of
@@ -26,8 +25,23 @@ load fn = do
       ("Player 1:":deck1) -> case ls2 of
         ("Player 2:":deck2) -> return (map read deck1, map read deck2)
 
+-------------------------------------------------------------------------------
+-- part 1
 
-play2 (list1,list2) = go (Set.empty) (Seq.fromList list1) (Seq.fromList list2) where
+playV1 :: Decks -> Result
+playV1 (list1,list2) = go (Seq.fromList list1) (Seq.fromList list2) where
+  go !deck1 !deck2 = case (Seq.viewl deck1 , Seq.viewl deck2) of
+    (EmptyL  , _      ) -> Result Player2 (F.toList deck2)
+    (_       , EmptyL ) -> Result Player1 (F.toList deck1)
+    (x :< xs , y :< ys) -> if x > y 
+      then go (xs |> x |> y) ys 
+      else go xs (ys |> y |> x)
+
+-------------------------------------------------------------------------------
+-- part 2
+
+playV2 :: Decks -> IO Result
+playV2 (list1,list2) = go (Set.empty) (Seq.fromList list1) (Seq.fromList list2) where
 
   go !previous !deck1 !deck2 = do
     -- print (F.toList deck1)
@@ -63,8 +77,30 @@ play2 (list1,list2) = go (Set.empty) (Seq.fromList list1) (Seq.fromList list2) w
     -- putStrLn "^^^^^^^^^^^^^^^^^^^"
     return res    
 
+--------------------------------------------------------------------------------
+
+winningScore :: Result -> Int
+winningScore (Result winner final) = sum $ zipWith (*) (reverse final) [1..]
+
+part1 :: Decks -> IO ()
+part1 decks = do
+  putStrLn "\npart 1"
+  let result = playV1 decks
+  -- putStrLn $ "result of the match = " ++ show result
+  putStrLn $ "winner is     = " ++ show (winner result)
+  putStrLn $ "winning score = " ++ show (winningScore result)
+
+part2 :: Decks -> IO ()
+part2 decks = do
+  putStrLn "\npart 2"
+  result <- playV2 decks
+  -- putStrLn $ "result of the match = " ++ show result
+  putStrLn $ "winner is     = " ++ show (winner result)
+  putStrLn $ "winning score = " ++ show (winningScore result)
+
+main :: IO ()
 main = do
   decks <- load "input22"
-  res@(Result winner final) <- play2 decks
-  print res
-  print $ sum $ zipWith (*) (reverse final) [1..]
+  part1 decks
+  part2 decks
+

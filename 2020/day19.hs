@@ -4,11 +4,13 @@ import qualified Data.Map as Map ; import Data.Map (Map)
 import Data.List
 import Data.List.Split
 
+--------------------------------------------------------------------------------
+
 data Rule r
   = Chr !Char
   | Alt ![Rule r]
   | Seq ![r]
-  deriving Show
+  deriving (Eq,Show)
 
 parseIntRule :: String -> (Int, Rule Int)
 parseIntRule str = case splitOn ": " str of
@@ -21,8 +23,10 @@ parseRule_ what = case what of
     [x]   -> Seq (map read $ words x)
     list  -> Alt (map parseRule_ list)
 
+parseMessage :: String -> String
 parseMessage = id
 
+load :: FilePath -> IO (Map Int (Rule Int), [String])
 load fn = do
   ls <- lines <$> readFile fn
   case splitWhen null ls of
@@ -31,12 +35,15 @@ load fn = do
       , map parseMessage messages
       )
 
-match :: Map Int (Rule Int) -> String -> Bool
-match ruleTable str = case parse' ruleTable str of
+--------------------------------------------------------------------------------
+-- part 1
+
+matchV1 :: Map Int (Rule Int) -> String -> Bool
+matchV1 ruleTable str = case parseV1 ruleTable str of
   (b,rem) -> b && null rem 
 
-parse' :: Map Int (Rule Int) -> String -> (Bool,String)
-parse' ruleTable = goN 0 where
+parseV1 :: Map Int (Rule Int) -> String -> (Bool,String)
+parseV1 ruleTable = goN 0 where
 
   goN k str = case Map.lookup k ruleTable of 
     Just what -> goRule what str
@@ -56,6 +63,20 @@ parse' ruleTable = goN 0 where
     (ok,rest) -> if ok then (ok,rest) else (goAlt ks str)
 
 --------------------------------------------------------------------------------
+-- part 2
+
+oldRule8, oldRule11 :: Rule Int
+oldRule8  = Seq [42]
+oldRule11 = Seq [42,31]
+
+newRule8, newRule11 :: Rule Int
+newRule8  = Alt [ Seq [42]    , Seq [42,8]     ]
+newRule11 = Alt [ Seq [42,31] , Seq [42,11,31] ]
+
+replaceRules :: Map Int (Rule Int) -> Map Int (Rule Int)
+replaceRules old = if (Map.lookup 8 old == Just oldRule8) && (Map.lookup 11 old) == Just (oldRule11)
+  then Map.insert 8 newRule8 $ Map.insert 11 newRule11 old
+  else error "replaceRules: the old rules #8 and/or #11 do not match the expected ones"
 
 matchV2 :: Map Int (Rule Int) -> String -> Bool
 matchV2 ruleTable str = [] `elem` (parseV2 ruleTable str)
@@ -79,11 +100,30 @@ parseV2 ruleTable = goN 0 where
   goAlt [] str = []
   goAlt ks str = concat [ goRule k str | k <- ks ]
 
-main = do
-  -- (rules,msg) <- load "test19b"
-  (rules,msg) <- load "input19b"
-  print rules
+--------------------------------------------------------------------------------
+
+part1 :: IO ()
+part1 = do
+  putStrLn "\npart 1"
+  (rules,msg) <- load "input19"
+  let result = [ (matchV1 rules m , m) | m <- msg ]
+  -- print rules
+  -- mapM_ print result
+  let answer = sum [ 1 | (True,_) <- result ]
+  putStrLn $ "the answer to part 1 = " ++ show answer
+
+part2 :: IO ()
+part2  = do
+  putStrLn "\npart 2"
+  (old_rules,msg) <- load "input19"
+  let rules = replaceRules old_rules
   let result = [ (matchV2 rules m , m) | m <- msg ]
-  mapM_ print result
-  print $ sum [ 1 | (True,_) <- result ]
+  -- print rules
+  -- mapM_ print result
+  let answer = sum [ 1 | (True,_) <- result ]
+  putStrLn $ "the answer to part 2 = " ++ show answer
   
+main :: IO ()
+main = do
+  part1
+  part2

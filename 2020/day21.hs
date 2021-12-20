@@ -49,27 +49,28 @@ solve table = if Map.null table then [] else case find (isSingleton . snd) (Map.
   where
     deleteIng ing = Map.map (Set.delete ing)
 
+--------------------------------------------------------------------------------
+
+main :: IO ()
 main = do 
-  -- stuff <- load "test21"
   stuff <- load "input21"
   -- mapM_ print stuff
 
   let ingSet = Set.fromList (concatMap fst stuff)
   let allSet = Set.fromList (concatMap snd stuff)
-  -- print ingSet
-  -- print allSet
 
   let possibles = possible stuff
-  mapM_ print $ Map.toList $ possibles
+  -- mapM_ print $ Map.toList $ possibles
 
   let bad_candidates = Set.unions $ Map.elems possibles
   let safe = Set.difference ingSet bad_candidates
-  print safe
-  print $ Set.size safe
+  -- putStrLn $ "safe ingredients = " ++ show (Set.toList safe)
+  -- putStrLn $ "number of safe ingredients = " ++ show (Set.size safe)
   
   let count1 = sum [ sum [ 1 | (ings,_) <- stuff , elem ing ings ] | ing <- Set.toList safe ]
-  print count1
+  putStrLn $ "answer to part 1 = " ++ show count1
 
   let sol = sortBy (comparing fst) $ solve possibles
-  print sol
-  putStrLn $ intercalate "," $ map snd sol
+  -- print sol
+  putStrLn $ "answer to part 2 = " ++ (intercalate "," $ map snd sol)
+

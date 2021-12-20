@@ -1,6 +1,7 @@
 
 {-# LANGUAGE BangPatterns #-}
 
+import Data.Maybe
 import Data.Array
 import Data.List
 import Data.List.Split
@@ -22,19 +23,22 @@ mbTileNo mb = case mb of { Just t -> tileNo t ; Nothing -> 0 }
 
 --------------------------------------------------------------------------------
 
+seaMonsterTemplate :: [[Char]]
 seaMonsterTemplate = 
   [ "                  # "
   , "#    ##    ##    ###"
   , " #  #  #  #  #  #   "
   ]
 
+seaMonsterCoordsRef :: [(Int,Int)]
 seaMonsterCoordsRef = [ (i,j) | i<-[0..n-1] , j<-[0..m-1] , (seaMonsterTemplate !! i ) !! j == '#' ]  where
   n = length       seaMonsterTemplate      -- 3
   m = length (head seaMonsterTemplate)     -- 20
 
-seaMonsterN = 3
-seaMonsterM = 20
+seaMonsterN = 3  :: Int
+seaMonsterM = 20 :: Int
 
+seaMonsterCoords :: [(Int,Int)]
 seaMonsterCoords = [(0,18),(1,0),(1,5),(1,6),(1,11),(1,12),(1,17),(1,18),(1,19),(2,1),(2,4),(2,7),(2,10),(2,13),(2,16)]
 
 checkSeaMonsterAtLocation :: BigArr -> (Int,Int) -> Bool
@@ -56,16 +60,19 @@ findAllSeaMonsters arr =
   where 
     ((1,1),(n,m)) = bounds arr
 
+type Roughness = Int
+
 roughness :: Arr -> Int
 roughness arr = length $ filter (=='#') $ elems arr
 
-checkAndRemoveMonsters :: BigArr -> IO ()
+checkAndRemoveMonsters :: BigArr -> IO Roughness
 checkAndRemoveMonsters arr = do
   let monsters = findAllSeaMonsters arr
   let update = concat $ map removeSeaMonsterAt monsters
   let final = arr // update
   -- printArr final
-  putStrLn $ "\nroughness = " ++ show (roughness final)
+  -- putStrLn $ "\nroughness = " ++ show (roughness final)
+  return (roughness final)
 
 --------------------------------------------------------------------------------
 
@@ -96,6 +103,8 @@ makeBigArr meta0 = bigarr where
   ((1,1),(meta_n ,meta_m )) = bounds meta
 
 --------------------------------------------------------------------------------
+
+type MetaArr = Array (Int,Int) (Maybe Tile)
 
 select1 :: [a] -> [(a,[a])]
 select1 [] = []
@@ -139,8 +148,6 @@ arrSide dir arr =
   where
     ((1,1),(n,m)) = bounds arr
 
-type MetaArr = Array (Int,Int) (Maybe Tile)
-
 checkMetaArr :: MetaArr -> Bool
 checkMetaArr meta = and horizs && and verts where
   horizs = [ check (side S <$> (lkp i j)) (side N <$> lkp (i+1) j) | i<-[1..n-1], j<-[1..m  ] ]
@@ -150,7 +157,7 @@ checkMetaArr meta = and horizs && and verts where
 
 check :: Eq a => Maybe a -> Maybe a -> Bool
 check (Just x) (Just y) = x == y
-check _ _ = True
+check _        _        = True
 
 createMetaArr :: Int -> [Tile] -> MetaArr
 createMetaArr metasize tiles = accumArray (flip const) Nothing ((1,1),(metasize,metasize)) (zip coords $ map Just tiles) where
@@ -206,51 +213,58 @@ parseTile (header:rest) = Tile no arr where
   m = length (head rest)
   arr = array ((1,1),(n,m)) [ ((i,j),c) | (i,line) <- zip [1..] rest, (j,c) <- zip [1..] line ]
 
+load :: FilePath -> IO [Tile]
 load fn = do
   ls <- lines <$> readFile fn
   let tiles = splitWhen null ls
-  return $ map parseTile tiles
-
-main = do
-  -- tiles <- load "test20"
-  tiles <- load "input20"
-  let ntiles = length tiles
-  let metasize = round $ sqrt (fromIntegral ntiles :: Double)
-  putStrLn $ "numer of tiles = " ++ show (ntiles)
-  putStrLn $ "meta N = " ++ show (metasize)
-  putStrLn ""
-  -- forM_ (possibleTiles (head tiles)) printTile
-  let meta = backtrack metasize tiles
-  printMetaArr meta
-  let bigarr = makeBigArr meta
-  printArr bigarr
-
-  putStrLn "====================================================="
-  forM_ (possibleArrs bigarr) checkAndRemoveMonsters
-  -- checkAndRemoveMonsters bigarr
+  return $ map parseTile $ filter (not . null) tiles
 
 --------------------------------------------------------------------------------
--- solution to part1
 
-{-
+metaArrCornersMb :: MetaArr -> [Maybe Tile]
+metaArrCornersMb arr = list where
+  ((i1,j1),(i2,j2)) = bounds arr
+  list = [ arr ! (i1,j1) 
+         , arr ! (i1,j2) 
+         , arr ! (i2,j1) 
+         , arr ! (i2,j2)
+         ] 
 
-===================
-3433 , 1973 , 3319 , 2749 , 2801 , 3083 , 1451 , 2843 , 1867 , 3767 , 3491 , 2011
-2837 , 3307 , 1087 , 3821 , 2833 , 1091 , 1901 , 1447 , 1753 , 2731 , 1583 , 3793
-3613 , 1667 , 2273 , 2579 , 1873 , 3607 , 1289 , 2693 , 1847 , 1789 , 1567 , 2287
-2411 , 3853 , 1423 , 1949 , 1471 , 1009 , 2207 , 1381 , 1723 , 3701 , 2957 , 2423
-3643 , 3559 , 1889 , 1999 , 3517 , 3691 , 1709 , 2371 , 1223 , 2857 , 2557 , 1997
-1811 , 1559 , 3617 , 2081 , 2683 , 3359 , 2161 , 2137 , 1511 , 2239 , 1409 , 2003
-2671 , 3769 , 3257 , 2477 , 1097 , 3079 , 1979 , 1181 , 2909 , 1579 , 2269 , 2399
-3301 , 3169 , 3529 , 3217 , 2939 , 2351 , 3019 , 2053 , 2027 , 2089 , 1291 , 2099
-3881 , 2707 , 2447 , 2963 , 2531 , 2339 , 3583 , 2221 , 3547 , 1039 , 2417 , 3109
-1213 , 2281 , 1109 , 2521 , 2659 , 1103 , 2633 , 3947 , 1231 , 2143 , 2549 , 2111
-1013 , 1307 , 2393 , 1151 , 2719 , 3119 , 2063 , 3877 , 1163 , 2677 , 1063 , 1279
-3833 , 3943 , 2917 , 2791 , 1693 , 1051 , 1367 , 2851 , 2543 , 3413 , 1429 , 3001
+metaArrCorners :: MetaArr -> [Integer]
+metaArrCorners = map (fromIntegral . tileNo . fromJust) . metaArrCornersMb
 
-corners = [3433,3833,2011,3001]
-product of corners = 79412832860579
+main :: IO ()
+main = do
+  tiles <- load "input20"     -- "test20"
 
--}
+  let ntiles = length tiles
+  let metasize = round $ sqrt (fromIntegral ntiles :: Double)
+  putStrLn $ "numer of tiles = " ++ show ntiles
+  putStrLn $ "meta N         = " ++ show metasize
+
+  ---- solve ----
+
+  let meta = backtrack metasize tiles
+
+  -- forM_ (possibleTiles (head tiles)) printTile
+  -- printMetaArr meta
+
+  ---- part 1 ----
+
+  putStrLn "\npart 1 (be patient, takes about 45 seconds on my machine)"
+  let corners = metaArrCorners meta
+  putStrLn $ "corners          = " ++ show corners
+  putStrLn $ "answer to part 1 = " ++ show (product corners)
+
+  ---- part 2 ----
+
+  putStrLn "\npart 2"
+
+  let bigarr = makeBigArr meta
+  -- printArr bigarr
+
+  roughness_list <- forM (possibleArrs bigarr) checkAndRemoveMonsters
+  putStrLn $ "roughness with different orientations = " ++ show roughness_list
+  putStrLn $ "answer to part 2 = " ++ show (minimum roughness_list)
 
 --------------------------------------------------------------------------------
