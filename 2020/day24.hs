@@ -8,20 +8,26 @@ import qualified Data.Set        as Set
 import Data.Map.Strict (Map)
 import Data.Set        (Set)
 
+--------------------------------------------------------------------------------
+-- misc
+
 iter :: Int -> (a -> a) -> (a -> a)
 iter !n f !x = go n x where
   go !n !x 
     | n == 0    = x
     | otherwise = let !y = f x in go (n-1) y
 
+sum' :: [Int] -> Int
+sum' = foldl' (+) 0 
+
+--------------------------------------------------------------------------------
+-- types
+
 data Dir = E | SE | SW | W | NW | NE deriving (Eq,Show)
 
 allDirs = [E,SE,SW,W,NW,NE]
 
 type Pos = (Int,Int)
-
-sum' :: [Int] -> Int
-sum' = foldl' (+) 0 
 
 data Color = Black | White deriving (Eq,Show)
 
@@ -30,12 +36,12 @@ oppoCol White = Black
 
 dirToXY :: Dir -> Pos
 dirToXY d = case d of
-  E   -> (1,0 )
-  SE  -> (1,-1)
-  SW  -> (0,-1)
-  W   -> (-1,0)
-  NW  -> (-1,1)
-  NE  -> (0 ,1)
+  E   -> ( 1 , 0 )
+  SE  -> ( 1 ,-1 )
+  SW  -> ( 0 ,-1 )
+  W   -> (-1 , 0 )
+  NW  -> (-1 , 1 )
+  NE  -> ( 0 , 1 )
 
 plus :: Pos -> Pos -> Pos
 plus (a,b) (x,y) = (a+x,b+y)
@@ -43,20 +49,8 @@ plus (a,b) (x,y) = (a+x,b+y)
 pathToXY :: [Dir] -> Pos
 pathToXY dirs = foldl' plus (0,0) (map dirToXY dirs)
 
-parseLine :: String -> [Dir]
-parseLine = go where
-  go [] = []
-  go ('e':    rest) = E : go rest
-  go ('s':'e':rest) = SE : go rest
-  go ('s':'w':rest) = SW : go rest
-  go ('w':    rest) = W : go rest
-  go ('n':'e':rest) = NE : go rest
-  go ('n':'w':rest) = NW : go rest
-
-load :: FilePath -> IO [[Dir]]
-load fn = do
-  ls <- lines <$> readFile fn
-  return $ map parseLine ls
+--------------------------------------------------------------------------------
+-- part 1
 
 setColor :: Pos -> Color -> Map Pos Color -> Map Pos Color
 setColor pos White table = Map.delete pos       table
@@ -78,6 +72,7 @@ countBlacks :: Map Pos Color -> Int
 countBlacks table = sum' [ 1 | col <- Map.elems table , col == Black ]
 
 --------------------------------------------------------------------------------
+-- part 2
 
 neighs :: Pos -> [Pos]
 neighs pos = [ plus pos (dirToXY dir) | dir <- allDirs ]
@@ -101,9 +96,28 @@ step oldtable = foldl' worker oldtable candidates where
   countBlackNeighs pos = sum' [ 1 | q <- neighs pos , lkpColor q oldtable == Black ]
 
 --------------------------------------------------------------------------------
+-- parsing
 
+parseLine :: String -> [Dir]
+parseLine = go where
+  go [] = []
+  go ('e':    rest) = E  : go rest
+  go ('s':'e':rest) = SE : go rest
+  go ('s':'w':rest) = SW : go rest
+  go ('w':    rest) = W  : go rest
+  go ('n':'e':rest) = NE : go rest
+  go ('n':'w':rest) = NW : go rest
+
+load :: FilePath -> IO [[Dir]]
+load fn = do
+  ls <- lines <$> readFile fn
+  return $ map parseLine ls
+
+--------------------------------------------------------------------------------
+
+main :: IO ()
 main = do
   input <- load "input24"
   let table = part1 input
-  print $ countBlacks table
-  print $ countBlacks $ iter 100 step $ table
+  putStrLn $ "answer to part 1 = " ++ show (countBlacks table)
+  putStrLn $ "answer to part 2 = " ++ show (countBlacks $ iter 100 step $ table)

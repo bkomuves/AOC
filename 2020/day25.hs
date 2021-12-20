@@ -1,48 +1,71 @@
 
-{-# LANGUAGE BangPatterns #-}
-
-card_public = 11404017
-door_public = 13768789
-
 {-
-a = MultiplicativeOrder[7, 20201227, {11404017}]
-b = MultiplicativeOrder[7, 20201227, {13768789}]
-11710225
-8516638
+
+(* --- solution in Mathematica --- *)
+
+cardPublic = 12320657 
+doorPublic = 9659666  
+
+cardPublicTest = 5764801  
+doorPublicTest = 17807724 
+
+a = MultiplicativeOrder[7, 20201227, {cardPublic}]
+b = MultiplicativeOrder[7, 20201227, {doorPublic}]
+
+(* test:  {a,b} = {8, 11}          *)
+(* input: {a,b} = {6527904, 75188} *)
 
 PowerMod[PowerMod[7, a, 20201227], b, 20201227]
 PowerMod[PowerMod[7, b, 20201227], a, 20201227]
-18862163
+
+(* answer = 6421487 *)
+
 -}
+
+--------------------------------------------------------------------------------
+
+{-# LANGUAGE Strict #-}
+
+card_public = 12320657  :: Int
+door_public = 9659666   :: Int
+
+card_public_test = 5764801  :: Int 
+door_public_test = 17807724 :: Int
 
 subject = 7        :: Int
 prime   = 20201227 :: Int
 
+modp :: Int -> Int
 modp x = mod x prime
 
-iter :: Int -> (a -> a) -> (a -> a)
-iter !n f !x = go n x where
-  go !n !x 
-    | n == 0    = x
-    | otherwise = let !y = f x in go (n-1) y
+-- the smallest integer m such that 7^m = target (mod prime)
+multiplicativeOrder :: Int -> Int
+multiplicativeOrder target = go 0 1 where
+  go m x = if x == target then m else go (m+1) (modp (7*x))
 
-transformN :: Int -> Int -> Int
-transformN n = iter n step where
+-- b^k mod prime
+powerMod :: Int -> Int -> Int 
+powerMod b 0 = 1
+powerMod b e = go 1 e where
+  go :: Int -> Int -> Int
+  go a e = case mod e 2 of { 0 -> yy ; 1 -> modp (b*yy) } where
+    e1 = div e 2
+    y  = powerMod b e1
+    yy = modp (y*y)
 
-step :: Int -> Int
-step x = mod (x*7) prime
-
-card_public_test = 5764801
-door_public_test = 17807724
-
+solve :: (Int,Int) -> IO ()
+solve (card_pub, door_pub) = do
+  let a = multiplicativeOrder card_pub
+  let b = multiplicativeOrder door_pub
+  print (a,b)
+  let x = powerMod (powerMod 7 a) b
+  let y = powerMod (powerMod 7 b) a
+  if x /= y 
+    then putStrLn $ "fatal error in mathematics!"
+    else putStrLn $ "the final answer = " ++ show x
+main :: IO ()
 main = do
-  print $ modp $ subject^(8)
-  print $ modp $ subject^(11)
-  print $ modp $ subject^(8+11)
-
-  print $ iter 8  step $ 1
-  print $ iter 11 step $ 1
-  print $ iter 11 step $ iter 8 step $ 1
-
-  print $ iter 8  step $ 17807724
-  print $ iter 11 step $ 5764801
+  putStrLn "\nthe example:"
+  solve (card_public_test, door_public_test)
+  putStrLn "\nreal input:"
+  solve (card_public, door_public)
