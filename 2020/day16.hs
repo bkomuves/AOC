@@ -7,6 +7,9 @@ import Data.List
 import Data.List.Split
 import Data.Ord
 
+--------------------------------------------------------------------------------
+
+equating :: Eq b => (a -> b) -> a -> a -> Bool
 equating f x y = f x == f y
 
 type Ticket = [Int]
@@ -42,6 +45,9 @@ load fn = do
       tickets = case para3 of ( "nearby tickets:" : rest  ) -> map readIntList rest 
   return $ Problem conds my tickets
 
+--------------------------------------------------------------------------------
+-- part 1
+
 checkCond :: Int -> Cond -> Bool
 checkCond x (a,b) = x >= a && x <= b
 
@@ -51,13 +57,16 @@ checkCondPair x (p,q) = checkCond x p || checkCond x q
 checkCondsAny :: Int -> [CondPair] -> Bool
 checkCondsAny x cs = any (checkCondPair x) cs
 
+solve1 :: Problem -> [Int]
 solve1 (Problem conds _ tickets) = filter (\x -> not $ checkCondsAny x (map snd conds)) (concat tickets)
 
--- this is stupid
--- possibleIndices conds numbers = [ i | (i,(name,condp)) <- zip [0..] conds , all (\x -> checkCondPair x condp) numbers ]
+--------------------------------------------------------------------------------
+-- part 2
 
+possibleNames :: [(a,CondPair)] -> [Int] -> [a]
 possibleNames conds numbers = [ name | (name,condp) <- conds , all (\x -> checkCondPair x condp) numbers ]
 
+mbSingleton :: [a] -> Maybe a
 mbSingleton [x] = Just x
 mbSingleton _   = Nothing
 
@@ -69,6 +78,8 @@ solve2 = worker where
       ((name,j) : _) -> (name,j) : worker next where
         next = [ (n,l') | (n,l) <- stuff , n /= name , let l' = l \\ [j] ]
 
+{-
+-- was used for debugging 
 solve2_IO :: [(String,[Int])] -> IO [(String,Int)]
 solve2_IO = worker where
   worker [] = return []
@@ -79,66 +90,44 @@ solve2_IO = worker where
     case catMaybes mbs of
       ((name,j) : _) -> ((name,j) :) <$> worker next where
         next = [ (n,l') | (n,l) <- stuff , n /= name , let l' = l \\ [j] ]
+-}
 
-main = do
-  stuff@(Problem conds my tickets) <- load "input16"
-  mapM_ print conds
-  putStrLn $ "my = " ++ show my
-  putStrLn "----------------------"
-  -- print stuff
-  let bad = solve1 stuff
-  -- print bad
-  -- print $ sum bad
+--------------------------------------------------------------------------------
+
+part1 :: Problem -> IO ()
+part1 problem@(Problem conds my tickets) = do
+  putStrLn "\npart 1"
+  let bad = solve1 problem
+  putStrLn $ "bad tickets      = " ++ show bad
+  putStrLn $ "answer to part 1 = " ++ show (sum bad)
+
+part2 :: Problem -> IO ()
+part2 problem@(Problem conds my tickets) = do
+  putStrLn "\npart 2"
+
+  let bad = solve1 problem
   let goodtickets = [ ticket | ticket <- tickets , all (\x -> checkCondsAny x (map snd conds)) ticket ]
-  -- print goodtickets
   let tr = transpose goodtickets
-  -- let candidates = map (possibleIndices conds) $ zip [0..] tr
   let candidates = [ (name,idx) | (idx,column) <- zip [0..] tr , name <- possibleNames conds column ]
   let named_cand = map (\xs -> (fst (head xs) , map snd xs))
                  $ groupBy (equating fst) $ sortBy (comparing fst) candidates
-  mapM_ print named_cand
   let sol = solve2 named_cand
-  mapM_ print sol
+  -- mapM_ print sol
+
   let idxs = [ j | (name,j) <- sol , isPrefixOf "departure" name ]
   putStrLn $ "departure indices = " ++ show idxs
-  putStrLn $ "on my ticket = " ++ show [ my !! j | j <- idxs ]
-  print $ product [ my !! j | j <- idxs ]
+  putStrLn $ "on my ticket      = " ++ show [ my !! j | j <- idxs ]
+  putStrLn $ "answer to part 2  = " ++ show (product [ my !! j | j <- idxs ])
 
-  putStrLn "sanity check:"
-  forM_ sol $ \(name,idx) -> do
-    let Just condpair = lookup name conds
-    let column = tr !! idx
-    putStrLn $ show (name,idx,condpair) ++ " -> " ++ show (and [ checkCondPair x condpair | x <- column ])
+  -- putStrLn "sanity check:"
+  -- forM_ sol $ \(name,idx) -> do
+  --   let Just condpair = lookup name conds
+  --   let column = tr !! idx
+  --   putStrLn $ show (name,idx,condpair) ++ " -> " ++ show (and [ checkCondPair x condpair | x <- column ])
 
-{-
+main :: IO ()
+main = do
+  problem <- load "input16"
+  part1 problem
+  part2 problem
 
-That's not the right answer; your answer is too low. If you're stuck, make sure you're using the full input data; 
-there are also some general tips on the about page, or you can ask for hints on the subreddit. Please wait one 
-minute before trying again. (You guessed 545339018449.) [Return to Day 16]
-
--}
-
-{- 
-
-("wagon",19)
-("duration",13)
-("seat",18)
-("departure platform",14)
-("departure date",11)
-("arrival station",2)
-("class",1)
-("zone",4)
-("train",5)
-("route",0)
-("type",3)
-("arrival track",15)
-("departure time",7)
-("arrival location",17)
-("row",12)
-("price",10)
-("departure station",6)
-("arrival platform",8)
-("departure track",16)
-("departure location",9)
-
--}

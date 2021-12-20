@@ -4,9 +4,15 @@
 import qualified Data.Map as Map
 import Data.Map (Map)
 
-input = [1,2,16,19,18,0]
+--------------------------------------------------------------------------------
 
-ex1 = [0,3,6]
+exampleInput :: [Int]
+exampleInput = [0,3,6]
+
+input :: [Int]
+input = [14,3,1,0,9,5]
+
+--------------------------------------------------------------------------------
 
 type Turn = Int
 
@@ -39,25 +45,31 @@ step !turn !last !oldstate = (spoken,newstate) where
     Just (age1,age2) -> Map.insert spoken (turn,age1) oldstate
     Nothing          -> Map.insert spoken (turn,-1  ) oldstate
 
-main1 = do
-  print $ take 10 $ run ex1
-  print $ (run ex1 !! 2019)
-
+examples :: IO ()
+examples = do
+  print $ take 10 $ run exampleInput
+  print $ (run exampleInput !! 2019)
+  --
   print $ (run [1,3,2] !! 2019)  
   print $ (run [2,1,3] !! 2019)   
   print $ (run [1,2,3] !! 2019)  
   print $ (run [2,3,1] !! 2019)   
   print $ (run [3,2,1] !! 2019)  
   print $ (run [3,1,2] !! 2019)   
-   
-  print $ run input !! 2019
 
-main = do
-  print $ take 5000 $ run ex1
-  --print $ runN 2020 ex1   
-  --print $ runN 2020 [3,1,2]
+part1 :: IO ()
+part1 = do
+  putStrLn "part 1"
+  putStrLn $ "the 2020-th number spoken = " ++ show (run input !! 2019)
+
+-- just bruteforce it... (it's about 1 min on my laptop)
+part2 :: IO ()
+part2 = do
+  putStrLn "part 2"
   let n = 30000000
-  print n
-  -- print $ runN n input 
-  --print $ runN n ex1   
-  print "fuck"
+  putStrLn $ "the 30,000,000-th number spoken = " ++ show (run input !! (n-1))
+
+main :: IO ()
+main = do
+  part1 
+  part2
