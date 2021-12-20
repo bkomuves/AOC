@@ -61,7 +61,7 @@ record Input n where
 
 -- there is an extra newline at the end of the input, causing issues
 notEof : List String -> Bool
-notEof = not . force . null
+notEof = not . null 
 
 parseInput : List String -> (n : Nat ** Input n)
 parseInput lines = 

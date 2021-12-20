@@ -1,6 +1,8 @@
 
 -- this is very painful because Idris does not have eta-equality for pairs...
 
+module Matrix
+
 import Data.Fin
 import Data.Vect
 
@@ -23,16 +25,16 @@ isPosDim : (dim : Dimensions) -> Maybe (PosDim dim)
 isPosDim (S n1, S m1) = Just (PosDimProof Refl Refl)
 isPosDim (_   , _   ) = Nothing
 
-scalePos : (k1 : Nat) -> {n, n1 : Nat} -> (n = S n1) -> (l1 : Nat ** ((S k1) * n = S l1))
-scalePos k1 eq0 =
+scalePositive : (k1 : Nat) -> {n, n1 : Nat} -> (n = S n1) -> (l1 : Nat ** ((S k1) * n = S l1))
+scalePositive k1 eq0 =
   let eq = cong (\x => S k1 * x) eq0
   in  (plus n1 (mult k1 (S n1)) ** eq)
 
 public export
 scalePosDim : (k : Nat) -> {k1, n, m : Nat} -> {auto 0 prf : k = S k1} -> PosDim (n,m) -> PosDim (k * n, k * m)
 scalePosDim k (PosDimProof eq1 eq2) = PosDimProof
-  (rewrite prf in snd $ scalePos k1 eq1)
-  (rewrite prf in snd $ scalePos k1 eq2)
+  (rewrite prf in snd $ scalePositive k1 eq1)
+  (rewrite prf in snd $ scalePositive k1 eq2)
 
 --------------------------------------------------------------------------------
 -- indices
@@ -56,9 +58,11 @@ public export
 implementation Show (Index dim) where
   show (MkIndex i j) = show (i,j)
 
+public export
 topLeftCorner : {dim : Dimensions} -> {auto prf : PosDim dim} -> Index dim
 topLeftCorner {dim = (n,m)} {prf = PosDimProof eq1 eq2} = rewrite eq1 in (rewrite eq2 in MkIndex FZ FZ)
 
+public export
 bottomRightCorner : {dim : Dimensions} -> {auto prf : PosDim dim} -> Index dim
 bottomRightCorner {dim = (n,m)} {prf = PosDimProof eq1 eq2} = rewrite eq1 in (rewrite eq2 in MkIndex last last)
 

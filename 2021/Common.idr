@@ -1,6 +1,8 @@
 
 -- commonly used helper functions
 
+module Common
+
 import Data.Fin
 import Data.So
 import Data.List
@@ -14,6 +16,7 @@ import System.File
 
 --------------------------------------------------------------------------------
 
+public export
 fatal : String -> a
 fatal msg = assert_total $ idris_crash msg
 
@@ -21,11 +24,12 @@ fatal msg = assert_total $ idris_crash msg
 -- nat
 
 -- iteration
+public export
 natRec : Nat -> (a -> a) -> a -> a
 natRec Z     f x = x
 natRec (S n) f x = f (natRec n f x)
 
-
+public export
 halve : Nat -> Nat
 halve Z         = Z
 halve (S Z)     = Z
@@ -34,11 +38,13 @@ halve (S (S n)) = S (halve n)
 --------------------------------------------------------------------------------
 -- Fin
 
+public export
 incFin : {n : Nat} -> Fin n -> Maybe (Fin n)
 incFin {n=1      } FZ     = Nothing
 incFin {n=S (S k)} FZ     = Just (FS FZ)
 incFin {n=S k    } (FS j) = FS <$> (incFin j)
 
+public export
 finDivMod : {k, n : Nat} -> Fin (k*n) -> (Fin k, Fin n)
 finDivMod a0 =
   let a = finToNat a0
@@ -53,26 +59,32 @@ finDivMod a0 =
 --------------------------------------------------------------------------------
 -- strings
 
+public export
 readInt : String -> Int
 readInt = cast
 
+public export
 safeTail : String -> Maybe String
 safeTail str = assert_total $ if null str then Nothing else Just (strTail str)
 
+public export
 safeTail_ : String -> String
 safeTail_ str = assert_total $ if null str then "" else strTail str
 
 --------------------------------------------------------------------------------
 -- lists
 
+public export
 allJust : List (Maybe a) -> Maybe (List a)
 allJust = sequence
 
+public export
 fromListN : (n : Nat) -> List a -> Maybe (Vect n a)
 fromListN 0     xs      = case xs of { Nil => Just Nil ; _ => Nothing }
 fromListN (S n) (x::xs) = (x::) <$> fromListN n xs
 fromListN _     _       = Nothing
 
+public export
 unsafeFromListN : (n : Nat) -> List a -> Vect n a
 unsafeFromListN n xs = case fromListN n xs of
   Just vec => vec
@@ -81,17 +93,20 @@ unsafeFromListN n xs = case fromListN n xs of
 --------------------------------------------------------------------------------
 -- vectors
 
-wihtIndices : {n : Nat} -> Vect n a -> Vect n (Fin n, a)
-wihtIndices vec = zip range vec
+public export
+withIndices : {n : Nat} -> Vect n a -> Vect n (Fin n, a)
+withIndices vec = zip range vec
 
 --------------------------------------------------------------------------------
 -- pars, triples
 
+public export
 pairs : List a -> List (a,a)
 pairs Nil            = Nil
 pairs (_::Nil)       = Nil
 pairs (x::xs@(y::_)) = (x,y) :: pairs xs
 
+public export
 triples : List a -> List (a,a,a)
 triples Nil               = Nil
 triples (_::Nil)          = Nil
@@ -139,27 +154,33 @@ namespace SortedMap
 --------------------------------------------------------------------------------
 -- monads
 
+public export
 forM : (Monad m, Traversable f) => f a -> (a -> m b) -> m (f b)
 forM = for
 
+public export
 forM_ : (Monad m, Foldable f) => f a -> (a -> m ()) -> m ()
 forM_ what action = go (toList what) where
   go : List a -> m ()
   go []      = pure ()
   go (x::xs) = action x >> go xs
 
+public export
 mapM : (Monad m, Traversable f) => (a -> m b) -> f a -> m (f b)
 mapM = flip forM
 
+public export
 mapM_ : (Monad m, Traversable f) => (a -> m ()) -> f a -> m ()
 mapM_ = flip forM_
 
 --------------------------------------------------------------------------------
 -- reading from files
 
+public export
 filterNonEmpty : List String -> List String
 filterNonEmpty = filter (not . null)
 
+public export
 readLines : String -> IO (List String)
 readLines fname = do
   ei <- readFilePage 0 forever fname

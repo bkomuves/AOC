@@ -1,6 +1,8 @@
 
 -- digits (these appear sometimes in AOC problems)
 
+module Digit
+
 import Data.List
 import Data.Vect
 import Data.String
