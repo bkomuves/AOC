@@ -5,6 +5,8 @@ import Data.String
 
 import Common
 
+%hide histogram
+
 --------------------------------------------------------------------------------
 
 data Digit

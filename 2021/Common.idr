@@ -7,6 +7,9 @@ import Data.List
 import Data.Vect
 import Data.String
 
+import Data.SortedSet
+import Data.SortedMap
+
 import System.File
 
 --------------------------------------------------------------------------------
@@ -94,6 +97,44 @@ triples Nil               = Nil
 triples (_::Nil)          = Nil
 triples (_::_::Nil)       = Nil
 triples (x::xs@(y::z::_)) = (x,y,z) :: triples xs
+
+--------------------------------------------------------------------------------
+-- choose 2
+
+namespace List
+
+  public export
+  choose2 : List a -> List (a,a)
+  choose2 []  = []
+  choose2 [_] = []
+  choose2 (x::xs) = [ (x,y) | y<-xs ] ++ choose2 xs
+
+namespace Vect
+
+  public export
+  choose2 : Vect n a -> List (a,a)
+  choose2 = List.choose2 . toList
+
+--------------------------------------------------------------------------------
+-- histogram
+
+namespace SortedMap
+
+  public export
+  Histogram : Type -> Type
+  Histogram k = SortedMap k Nat
+  
+  public export
+  insertWithPlus : (k,Nat) -> Histogram k -> Histogram k
+  insertWithPlus (x,n) h = case lookup x h of
+    Nothing => insert x  n    h
+    Just m  => insert x (n+m) h
+  
+  public export
+  histogram : Ord k => List k -> Histogram k
+  histogram list = foldr ins empty list where
+    ins : k -> SortedMap k Nat -> Histogram k
+    ins x = insertWithPlus (x,1)
 
 --------------------------------------------------------------------------------
 -- monads

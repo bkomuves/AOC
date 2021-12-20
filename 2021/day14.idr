@@ -71,19 +71,6 @@ step ruleset = go where
     Nothing => x :: go xs
     Just z  => x :: z :: go xs
 
-Histogram : Type -> Type
-Histogram k = SortedMap k Nat
-
-insertWithPlus : (k,Nat) -> Histogram k -> Histogram k
-insertWithPlus (x,n) h = case lookup x h of
-  Nothing => insert x  n    h
-  Just m  => insert x (n+m) h
-
-histogram : Ord k => List k -> Histogram k
-histogram list = foldr ins empty list where
-  ins : k -> SortedMap k Nat -> Histogram k
-  ins x = insertWithPlus (x,1)
-
 part1 : Input -> IO ()
 part1 (MkInput start rules) = do
   putStrLn "\npart 1"
