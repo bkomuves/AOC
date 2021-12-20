@@ -148,30 +148,44 @@ namespace Dim2
 
 namespace Matrix
 
-  parseLine : (m : Nat) -> String -> Maybe (Vect m Digit)
-  parseLine m str = case allJust $ map parseDigit $ unpack str of
+  parseLine : (Char -> Maybe a) -> (m : Nat) -> String -> Maybe (Vect m a)
+  parseLine f m str = case allJust $ map f $ unpack str of
     Nothing => Nothing
     Just xs => fromListN m xs
 
-  parseDigitMatrix' : (dim : Dimensions) -> List String -> Maybe (Matrix dim Digit)
-  parseDigitMatrix' (n,m) ls = fromListN n =<< allJust (map (parseLine m) ls)
+  parseMatrix' : (Char -> Maybe a) -> (dim : Dimensions) -> List String -> Maybe (Matrix dim a)
+  parseMatrix' f (n,m) ls = fromListN n =<< allJust (map (parseLine f m) ls)
+
+  -- parseLine : (m : Nat) -> String -> Maybe (Vect m Digit)
+  -- parseLine = parseLine' parseDigit
+
+  -- parseDigitMatrix' : (dim : Dimensions) -> List String -> Maybe (Matrix dim Digit)
+  -- parseDigitMatrix' = parseMatrix' (parseLine' parseDigit)
 
   export
-  parseDigitMatrix : List String -> Maybe (dim : Dimensions ** Matrix dim Digit)
-  parseDigitMatrix ls =
+  parseMatrix : (Char -> Maybe a) -> List String -> Maybe (dim : Dimensions ** Matrix dim a)
+  parseMatrix f ls =
     let n = length ls
         m = case ls of { (l::_) => length l ; _ => 0 }
         dim = (n,m)
-    in  case parseDigitMatrix' dim ls of
+    in  case parseMatrix' f dim ls of
           Just mat => Just (dim ** mat)
           Nothing  => Nothing
 
-  printLine : {m : Nat} -> Vect m Digit -> IO ()
-  printLine vect = do
-    putStrLn $ concat [ showDigit (index j vect) | j <- toList (range {len=m}) ]
+  export
+  parseDigitMatrix : List String -> Maybe (dim : Dimensions ** Matrix dim Digit)
+  parseDigitMatrix = parseMatrix parseDigit
+
+  printLine : (a -> String) -> {m : Nat} -> Vect m a -> IO ()
+  printLine f vect = do
+    putStrLn $ concat [ f (index j vect) | j <- toList (range {len=m}) ]
+
+  export
+  printMatrix : (a -> String) -> {dim : Dimensions} -> Matrix dim a -> IO ()
+  printMatrix f {dim=(_,_)} mat = mapM_ (printLine f) mat
 
   export
   printDigitMatrix : {dim : Dimensions} -> Matrix dim Digit -> IO ()
-  printDigitMatrix {dim=(_,_)} mat = mapM_ printLine mat
+  printDigitMatrix = printMatrix showDigit
 
 --------------------------------------------------------------------------------
