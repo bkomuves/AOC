@@ -45,6 +45,20 @@ incFin {n=S (S k)} FZ     = Just (FS FZ)
 incFin {n=S k    } (FS j) = FS <$> (incFin j)
 
 public export
+decFin : Fin (S n) -> Maybe (Fin n)
+decFin FZ     = Nothing
+decFin (FS k) = Just k
+
+-- including endpoint
+public export
+finRange : {n : Nat} -> Fin n -> Fin n -> List (Fin n)
+finRange a b = if b < a then [] else go a where
+  go : Fin n -> List (Fin n)
+  go k = case incFin k of
+    Nothing => [k]
+    Just k1 => if k < b then k :: go k1 else [k]
+
+public export
 finDivMod : {k, n : Nat} -> Fin (k*n) -> (Fin k, Fin n)
 finDivMod a0 =
   let a = finToNat a0
