@@ -93,12 +93,6 @@ abc = [-1,0,1]
 ijs : Vect 9 (Int,Int)
 ijs = fromList [ (i,j) | i<-abc , j<-abc ]
 
-finToInt : Fin n -> Int
-finToInt = cast . finToNat
-
-intToFin : Int -> (n : Nat) -> Maybe (Fin n)
-intToFin k n = if k < 0 then Nothing else natToFin (cast k) n
-
 address : a -> {dim : Dimensions} -> Matrix dim a -> (Int,Int) -> a
 address def {dim=(n,m)} mtx (i,j) = case (intToFin i n, intToFin j m) of
   (Just fi, Just fj) => index (MkIndex fi fj) mtx

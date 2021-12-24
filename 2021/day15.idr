@@ -14,20 +14,6 @@ import Digit
 
 --------------------------------------------------------------------------------
 
-namespace SortedMap
-
-  public export
-  member : Ord k => k -> SortedMap k a -> Bool
-  member k map = isJust (lookup k map)
-
-  public export
-  alter : Ord k => k -> (Maybe a -> Maybe a) -> SortedMap k a -> SortedMap k a
-  alter key f map = case f (lookup key map) of
-    Nothing => delete key   map
-    Just y  => insert key y map
-
---------------------------------------------------------------------------------
-
 RiskMap : Dimensions -> Type
 RiskMap dim = Matrix dim Nat
 

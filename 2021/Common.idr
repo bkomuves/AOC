@@ -39,17 +39,30 @@ halve (S (S n)) = S (halve n)
 -- Fin
 
 public export
+finToInt : Fin n -> Int
+finToInt = cast . finToNat
+
+public export
+intToFin : Int -> (n : Nat) -> Maybe (Fin n)
+intToFin k n = if k < 0 then Nothing else natToFin (cast k) n
+
+public export
 incFin : {n : Nat} -> Fin n -> Maybe (Fin n)
 incFin {n=1      } FZ     = Nothing
 incFin {n=S (S k)} FZ     = Just (FS FZ)
 incFin {n=S k    } (FS j) = FS <$> (incFin j)
 
 public export
-decFin : Fin (S n) -> Maybe (Fin n)
+decFin : Fin n -> Maybe (Fin n)
 decFin FZ     = Nothing
-decFin (FS k) = Just k
+decFin (FS k) = Just (weaken k)
 
--- including endpoint
+public export
+decFin' : Fin (S n) -> Maybe (Fin n)
+decFin' FZ     = Nothing
+decFin' (FS k) = Just k
+
+-- including both starting and end point
 public export
 finRange : {n : Nat} -> Fin n -> Fin n -> List (Fin n)
 finRange a b = if b < a then [] else go a where
@@ -57,6 +70,20 @@ finRange a b = if b < a then [] else go a where
   go k = case incFin k of
     Nothing => [k]
     Just k1 => if k < b then k :: go k1 else [k]
+
+-- including the starting point
+public export
+finRangeFrom : {n : Nat} -> Fin n -> List (Fin n)
+finRangeFrom a = go a where
+  go : Fin n -> List (Fin n)
+  go k = case incFin k of
+    Nothing => [k]
+    Just k1 => k :: go k1 
+
+-- including endpoint
+public export
+finRangeTo : {n : Nat} -> Fin n -> List (Fin n)
+finRangeTo {n=S n1} b = finRange 0 b
 
 public export
 finDivMod : {k, n : Nat} -> Fin (k*n) -> (Fin k, Fin n)
@@ -145,6 +172,27 @@ namespace Vect
   choose2 = List.choose2 . toList
 
 --------------------------------------------------------------------------------
+-- sortedmap
+
+namespace SortedSet
+
+  public export
+  member : Ord k => k -> SortedSet k -> Bool
+  member = contains
+
+namespace SortedMap
+
+  public export
+  member : Ord k => k -> SortedMap k a -> Bool
+  member k map = isJust (lookup k map)
+
+  public export
+  alter : Ord k => k -> (Maybe a -> Maybe a) -> SortedMap k a -> SortedMap k a
+  alter key f map = case f (lookup key map) of
+    Nothing => delete key   map
+    Just y  => insert key y map
+
+--------------------------------------------------------------------------------
 -- histogram
 
 namespace SortedMap
@@ -163,7 +211,7 @@ namespace SortedMap
   histogram : Ord k => List k -> Histogram k
   histogram list = foldr ins empty list where
     ins : k -> SortedMap k Nat -> Histogram k
-    ins x = insertWithPlus (x,1)
+    ins x = insertWithPlus (x,1)  
 
 --------------------------------------------------------------------------------
 -- monads
