@@ -112,6 +112,10 @@ public export
 safeTail_ : String -> String
 safeTail_ str = assert_total $ if null str then "" else strTail str
 
+export
+padRight : Nat -> String -> String
+padRight n str = str ++ replicate (minus n $ length str) ' '
+
 --------------------------------------------------------------------------------
 -- lists
 
@@ -130,6 +134,10 @@ unsafeFromListN : (n : Nat) -> List a -> Vect n a
 unsafeFromListN n xs = case fromListN n xs of
   Just vec => vec
   Nothing  => fatal "unsafeFromListN: lengths to not match"
+
+export
+nubSort : Ord a => List a -> List a
+nubSort = SortedSet.toList . SortedSet.fromList
 
 --------------------------------------------------------------------------------
 -- vectors
